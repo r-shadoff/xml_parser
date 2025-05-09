@@ -17,9 +17,8 @@ f.sort_data(download_path)
 f.grab_figure_data(download_path)
 f.clean_text(download_path)
 
-# Step 5. Clean up
+# # Step 5. Clean up
 f.file_shuttle(download_path)
 f.remove_file_type(download_path, extensions=(".gif", ".doc", ".docx", ".html", ".mov"))
 f.unique_exts(download_path) 
 f.no_trace(download_path)
-
