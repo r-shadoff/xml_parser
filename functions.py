@@ -5,8 +5,6 @@ import shutil
 from bs4 import BeautifulSoup
 import re
 import pandas as pd
-import spacy
-from spacy.matcher import PhraseMatcher, DependencyMatcher
 
 def download_pmc(dir, subdir, download_path):
     """
@@ -316,95 +314,13 @@ def grab_figure_data(download_path):
     df.to_csv(output_csv, sep='\t', index=False, encoding="utf-8")
     print(f"Extraction complete. CSV saved to {output_csv}")
 
-def grab_spacy_text(download_path):
-    input_filepath = os.path.join(download_path, "Sorted")
-    output_filepath = download_path
-    output_file = os.path.join(download_path, "spacy_figure_data.tsv")
-    
-    sentence_data = []
-    nlp = spacy.load("en_core_web_sm")
-    terms = ["Figure", "Fig", "figure", "fig", "fig. ", "Fig. "]
-    matcher = PhraseMatcher(nlp.vocab)
-
-
-    for root, dirs, files in os.walk(input_filepath):  
-        # print(f"Processing directory: {root}")  # Print the directory being processed
-
-        for subdir in dirs:  # each subdir is one PMC record
-            print(f"Processing subdirectory: {subdir}")
-            subdir_path = os.path.join(root, subdir)
-            for dirpath, _, filenames in os.walk(subdir_path):
-                for filename in filenames:
-                    item_path = os.path.join(dirpath, filename)
-                    if item_path.endswith(".nxml"):
-                        with open(item_path, "r") as file: 
-                            soup = BeautifulSoup(file, "xml")
-                            text = ''.join(soup.find_all(string=True))
-                            text = re.sub(r'<p>(.*?)</p>', ' ', text)
-                            text = re.sub(r'<li>(.*?)</li>', ' ', text)
-                            text = re.sub(r'\n', " ", text)
-                            doc = nlp(text)
-                            sentences = list(doc.sents)
-
-                            for i, sentence in enumerate(sentences):
-                                if any(term in sentence.text for term in terms):      
-                                    # Include next sentence if sentence ends in "Fig."
-                                    if sentence.text.strip().endswith("Fig."):
-                                        next_sentence = sentences[i + 1].text if i + 1 < len(sentences) else ""
-                                        sentence_data.append([subdir, sentence.text + " " + next_sentence])
-                                        
-                                    else:
-                                        sentence_data.append([subdir, sentence.text])
-                                        
-                                                    
-    df = pd.DataFrame(sentence_data, columns=["PMC ID", "Sentences"])
-    df.to_csv(output_file, sep="\t")
-    print(f"Spacy text extracted: {output_file}")
-
-def combine_dataframes(download_path):
-    df1_path = os.path.join(download_path, "figure_data.tsv")
-    df2_path = os.path.join(download_path, "spacy_figure_data.tsv")
-    df_combined_path = os.path.join(download_path, "combined_figure_data.tsv")
-    df1 = pd.read_csv(df1_path, sep="\t")
-    df2 = pd.read_csv(df2_path, sep="\t")
-
-
-
-
-    merged_rows = []
-
-    # Loop over df1 rows
-    for id1, row1 in df1.iterrows():
-        fig_id = str(row1['Figure ID'])
-        fig_label = str(row1['Figure Label'])
-
-        # Filter df2 for rows where either fig_id or fig_label is a substring 
-        matches = df2[df2['Sentences'].str.contains(fig_id, na=False) | df2['Sentences'].str.contains(fig_label, na=False)]
-
-        if not matches.empty:
-            for _, row2 in matches.iterrows():
-                # Append the merged row to the list
-                merged_row = row1.to_dict()
-                merged_row['Spacy Extracted Text'] = row2['Sentences']
-                merged_rows.append(merged_row)
-        else:
-            # Optional: include df1 rows with no match
-            merged_row = row1.to_dict()
-            merged_row['Spacy Extracted Text'] = None
-            merged_rows.append(merged_row)
-
-    # Convert the result to a new DataFrame
-    df_combined = pd.DataFrame(merged_rows)
-    df_combined.to_csv(df_combined_path, sep="\t")
-    print(f"Dataframes combined: {df_combined_path}")
-
 def clean_text(download_path):
     """
     Removes whitespace, line breaks, and invisible characters from text strings. 
     :param download_path: the figure_data.tsv within this directory will be cleaned.
     :return: a cleaned .tsv file
     """
-    input_csv = os.path.join(download_path, "combined_figure_data.tsv")
+    input_csv = os.path.join(download_path, "figure_data.tsv")
 
     def simple_clean_text(text):
         text = str(text).replace('\xa0', ' ') 
