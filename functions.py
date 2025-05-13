@@ -398,14 +398,8 @@ def combine_dataframes(download_path):
     df_combined.to_csv(df_combined_path, sep="\t")
     print(f"Dataframes combined: {df_combined_path}")
 
-def clean_spacy_text(download_path):
-    df_path = os.path.join(download_path, "combined_figure_data.tsv")
-    output_path = os.path.join(download_path, "combined_cleaned_data.tsv")
-    df = pd.read_csv(df_path, sep="\t")
-    merged_df = df.groupby(['PMC ID', 'Figure ID', 'Figure Label', 'Associated Image File', 'Sentences Before', 'Sentences After', 'Caption Title', 'Caption Text'], as_index=False).agg({'Spacy Extracted Text': ' '.join})
-    merged_df.to_csv(output_path, sep="\t")
 
-
+    
 
 def clean_text(download_path):
     """
@@ -413,8 +407,6 @@ def clean_text(download_path):
     :param download_path: the figure_data.tsv within this directory will be cleaned.
     :return: a cleaned .tsv file
     """
-    
-
     def simple_clean_text(text):
         text = str(text).replace('\xa0', ' ') 
         text = re.sub(r'[^\S\t]+', ' ', text)
@@ -424,21 +416,18 @@ def clean_text(download_path):
         text = re.sub(r'\\(?:documentclass\[[^\]]*\]\{[^\}]*\}|usepackage\{[^\}]*\}|setlength\{[^\}]*\}|begin\{[^\}]*\}|end\{[^\}]*\}|[a-zA-Z]+\{[^\}]*\})', '', text)
         text = re.sub(r'(\$[^\$]*\$|\\\([^\)]*\\\))', lambda m: m.group(0), text)
         return text.strip()
-    
-    input_csv = os.path.join(download_path, "combined_figure_data.tsv")
-    df = pd.read_csv(input_csv, sep='\t')
-    df = df.map(simple_clean_text) # cleans each element of the df
-    df = df.map(clean_latex_text)
-    print(f"{input_csv} has been cleaned.")
 
-    # Output filepath
-    dir_name = os.path.dirname(input_csv)
-    file_name = os.path.basename(input_csv)
-    file = file_name[:-4]
-    filepath = file + "_cleaned.tsv"
-    output_filepath = os.path.join(dir_name, filepath)
-    df.to_csv(output_filepath, sep='\t', index=False)
-    print(f"Cleaned csv saved to {output_filepath}")
+    df_path = os.path.join(download_path, "combined_figure_data.tsv")
+    output_path = os.path.join(download_path, "combined_cleaned_data.tsv")
+    df = pd.read_csv(df_path, sep="\t")
+    merged_df = df.groupby(['PMC ID', 'Figure ID', 'Figure Label', 'Associated Image File', 'Sentences Before', 'Sentences After', 'Caption Title', 'Caption Text'], as_index=False).agg({'Spacy Extracted Text': ' '.join})
+    cleaned_df = merged_df.map(simple_clean_text)
+    cleaned_df = merged_df.map(clean_latex_text)
+
+    print(f"{df_path} has been cleaned.")
+
+    cleaned_df.to_csv(output_path, sep="\t")
+    print(f"Cleaned csv saved to {output_path}")
 
 def file_shuttle(download_path):
     """
