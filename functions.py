@@ -398,13 +398,22 @@ def combine_dataframes(download_path):
     df_combined.to_csv(df_combined_path, sep="\t")
     print(f"Dataframes combined: {df_combined_path}")
 
+def clean_spacy_text(download_path):
+    df_path = os.path.join(download_path, "combined_figure_data.tsv")
+    output_path = os.path.join(download_path, "combined_cleaned_data.tsv")
+    df = pd.read_csv(df_path, sep="\t")
+    merged_df = df.groupby(['PMC ID', 'Figure ID', 'Figure Label', 'Associated Image File', 'Sentences Before', 'Sentences After', 'Caption Title', 'Caption Text'], as_index=False).agg({'Spacy Extracted Text': ' '.join})
+    merged_df.to_csv(output_path, sep="\t")
+
+
+
 def clean_text(download_path):
     """
     Removes whitespace, line breaks, and invisible characters from text strings. 
     :param download_path: the figure_data.tsv within this directory will be cleaned.
     :return: a cleaned .tsv file
     """
-    input_csv = os.path.join(download_path, "combined_figure_data.tsv")
+    
 
     def simple_clean_text(text):
         text = str(text).replace('\xa0', ' ') 
@@ -415,7 +424,8 @@ def clean_text(download_path):
         text = re.sub(r'\\(?:documentclass\[[^\]]*\]\{[^\}]*\}|usepackage\{[^\}]*\}|setlength\{[^\}]*\}|begin\{[^\}]*\}|end\{[^\}]*\}|[a-zA-Z]+\{[^\}]*\})', '', text)
         text = re.sub(r'(\$[^\$]*\$|\\\([^\)]*\\\))', lambda m: m.group(0), text)
         return text.strip()
-
+    
+    input_csv = os.path.join(download_path, "combined_figure_data.tsv")
     df = pd.read_csv(input_csv, sep='\t')
     df = df.map(simple_clean_text) # cleans each element of the df
     df = df.map(clean_latex_text)
