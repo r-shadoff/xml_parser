@@ -298,7 +298,6 @@ def grab_figure_data(download_path):
                                     "Associated Image File": associated_image,
                                     "Sentences Before": sentences_before,
                                     "Sentences After": sentences_after,
-                                    #"Direct Reference to Figure in Text": direct_ref_text,
                                     "Caption Title": caption_title_text,
                                     "Caption Text": caption_text_text
                                 })
@@ -340,6 +339,7 @@ def grab_spacy_text(download_path):
                         with open(item_path, "r") as file: 
                             soup = BeautifulSoup(file, "xml")
                             text = ''.join(soup.find_all(string=True))
+                            #text = spacy_preprocesing(text)
                             text = re.sub(r'<p>(.*?)</p>', ' ', text)
                             text = re.sub(r'<li>(.*?)</li>', ' ', text)
                             text = re.sub(r'\n', " ", text)
@@ -398,9 +398,6 @@ def combine_dataframes(download_path):
     df_combined.to_csv(df_combined_path, sep="\t")
     print(f"Dataframes combined: {df_combined_path}")
 
-
-    
-
 def clean_text(download_path):
     """
     Removes whitespace, line breaks, and invisible characters from text strings. 
@@ -416,17 +413,26 @@ def clean_text(download_path):
         text = re.sub(r'\\(?:documentclass\[[^\]]*\]\{[^\}]*\}|usepackage\{[^\}]*\}|setlength\{[^\}]*\}|begin\{[^\}]*\}|end\{[^\}]*\}|[a-zA-Z]+\{[^\}]*\})', '', text)
         text = re.sub(r'(\$[^\$]*\$|\\\([^\)]*\\\))', lambda m: m.group(0), text)
         return text.strip()
+    
+    def clean_spacy_text(text):
+        text = re.sub(r'\((?:[A-Za-z\s\.\-]+(?:,|\set\sal\.,?|\sand\s[A-Za-z\s\.\-]+,?)\s?\d{4}(?:;?\s?)?)+\)', '', text)
+        return text.strip()
 
     df_path = os.path.join(download_path, "combined_figure_data.tsv")
     output_path = os.path.join(download_path, "combined_cleaned_data.tsv")
     df = pd.read_csv(df_path, sep="\t")
+    df['Spacy Extracted Text'] = df['Spacy Extracted Text'].fillna('').astype(str)
     merged_df = df.groupby(['PMC ID', 'Figure ID', 'Figure Label', 'Associated Image File', 'Sentences Before', 'Sentences After', 'Caption Title', 'Caption Text'], as_index=False).agg({'Spacy Extracted Text': ' '.join})
-    cleaned_df = merged_df.map(simple_clean_text)
-    cleaned_df = merged_df.map(clean_latex_text)
+    text_cols = ('Sentences Before', 'Sentences After', 'Caption Title', 'Caption Text', 'Spacy Extracted Text')
+    for col in text_cols:
+        merged_df[col] = merged_df[col].map(simple_clean_text)
+        merged_df[col] = merged_df[col].map(clean_latex_text)
+        merged_df[col] = merged_df[col].map(clean_spacy_text)
+
 
     print(f"{df_path} has been cleaned.")
 
-    cleaned_df.to_csv(output_path, sep="\t")
+    merged_df.to_csv(output_path, sep="\t")
     print(f"Cleaned csv saved to {output_path}")
 
 def file_shuttle(download_path):
