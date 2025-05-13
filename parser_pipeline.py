@@ -18,6 +18,7 @@ download_path = "/Users/rachel/Desktop/xml_parser_test"
 #f.grab_figure_data(download_path)
 #f.grab_spacy_text(download_path)
 f.combine_dataframes(download_path)
+
 #TO DO: Add spacy text duplicate clean up in the clean_text function -> f.clean_text(download_path)
 
 # # Step 5. Clean up
