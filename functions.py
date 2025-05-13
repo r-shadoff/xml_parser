@@ -7,6 +7,7 @@ import re
 import pandas as pd
 import spacy
 from spacy.matcher import PhraseMatcher, DependencyMatcher
+from spacypdfreader.spacypdfreader import pdf_reader
 
 def download_pmc(dir, subdir, download_path):
     """
@@ -335,15 +336,9 @@ def grab_spacy_text(download_path):
             for dirpath, _, filenames in os.walk(subdir_path):
                 for filename in filenames:
                     item_path = os.path.join(dirpath, filename)
-                    if item_path.endswith(".nxml"):
+                    if item_path.endswith(".pdf"):
                         with open(item_path, "r") as file: 
-                            soup = BeautifulSoup(file, "xml")
-                            text = ''.join(soup.find_all(string=True))
-                            #text = spacy_preprocesing(text)
-                            text = re.sub(r'<p>(.*?)</p>', ' ', text)
-                            text = re.sub(r'<li>(.*?)</li>', ' ', text)
-                            text = re.sub(r'\n', " ", text)
-                            doc = nlp(text)
+                            doc = pdf_reader(file, nlp)
                             sentences = list(doc.sents)
 
                             for i, sentence in enumerate(sentences):
