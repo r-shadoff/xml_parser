@@ -1,7 +1,7 @@
 # XML Parsing Pipeline
 This project was created to quickly extract figure data from open access scientific articles. The extracted data includes the figure identifier, associated image file, caption text and title, as well as text from the body of the paper that refers to or explains the figure. Text describing the figure is extracted in two ways - the first method generates columns "Sentences Before" and "Sentences After" in your output file. These are sentences that immediately refer to the figure, as well as the preceeding and following sentence. The second method uses natural language processing to extract sentences that refer to the figure, and these strings are stored in the "Spacy Extracted Text" column. Depending on your use case, you may prefer to use Sentences Before/Sentences After, or Spacy Extracted Text. 
 
-# Scripts 
+## Scripts 
 - functions.py: contains the code for all functions called on in the parsing pipeline.
 - parser_pipeline.py: contains the pipeline, and can be run on your own files by changing the download_path that is hard coded into this script.
 
