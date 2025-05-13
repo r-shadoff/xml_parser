@@ -336,9 +336,19 @@ def grab_spacy_text(download_path):
             for dirpath, _, filenames in os.walk(subdir_path):
                 for filename in filenames:
                     item_path = os.path.join(dirpath, filename)
-                    if item_path.endswith(".pdf"):
+                    if item_path.endswith(".nxml"):
                         with open(item_path, "r") as file: 
-                            doc = pdf_reader(file, nlp)
+                            
+                            soup = BeautifulSoup(file, "xml")
+                            for xref in soup.find_all("xref", {"ref-type": "bibr"}): # Remove inline citations 
+                                xref.decompose()
+                            for id in soup.find_all("object-id", {"pub-id-type" : "doi"}):
+                                id.decompose()
+                            text = soup.get_text(separator = ' ')
+                            text = re.sub(r'\s+', ' ', text).strip()
+                            
+                            
+                            doc = nlp(text)
                             sentences = list(doc.sents)
 
                             for i, sentence in enumerate(sentences):
